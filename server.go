@@ -655,16 +655,9 @@ func (server *Server) loadConfig(configurations configs, globalConfiguration Glo
 									log.Errorf("Skipping frontend %s...", frontendName)
 									continue frontend
 								}
-								if configuration.Backends[frontend.Backend].HealthCheck != nil {
-									var interval time.Duration
-									if configuration.Backends[frontend.Backend].HealthCheck.Interval != "" {
-										interval, err = time.ParseDuration(configuration.Backends[frontend.Backend].HealthCheck.Interval)
-										if err != nil {
-											log.Errorf("Wrong healthcheck interval: %s", err)
-											interval = time.Second * 30
-										}
-									}
-									backendsHealthcheck[frontend.Backend] = healthcheck.NewBackendHealthCheck(configuration.Backends[frontend.Backend].HealthCheck.URL, interval, rebalancer)
+								hcOpts := parseHealthCheckOptions(rebalancer, frontend.Backend, configuration.Backends[frontend.Backend].HealthCheck)
+								if hcOpts != nil {
+									backendsHealthcheck[frontend.Backend] = healthcheck.NewBackendHealthCheck(*hcOpts)
 								}
 							}
 						case types.Wrr:
@@ -689,16 +682,9 @@ func (server *Server) loadConfig(configurations configs, globalConfiguration Glo
 									continue frontend
 								}
 							}
-							if configuration.Backends[frontend.Backend].HealthCheck != nil {
-								var interval time.Duration
-								if configuration.Backends[frontend.Backend].HealthCheck.Interval != "" {
-									interval, err = time.ParseDuration(configuration.Backends[frontend.Backend].HealthCheck.Interval)
-									if err != nil {
-										log.Errorf("Wrong healthcheck interval: %s", err)
-										interval = time.Second * 30
-									}
-								}
-								backendsHealthcheck[frontend.Backend] = healthcheck.NewBackendHealthCheck(configuration.Backends[frontend.Backend].HealthCheck.URL, interval, rr)
+							hcOpts := parseHealthCheckOptions(rr, frontend.Backend, configuration.Backends[frontend.Backend].HealthCheck)
+							if hcOpts != nil {
+								backendsHealthcheck[frontend.Backend] = healthcheck.NewBackendHealthCheck(*hcOpts)
 							}
 						}
 						maxConns := configuration.Backends[frontend.Backend].MaxConn
@@ -826,6 +812,31 @@ func (server *Server) buildDefaultHTTPRouter() *mux.Router {
 	router.StrictSlash(true)
 	router.SkipClean(true)
 	return router
+}
+
+func parseHealthCheckOptions(lb healthcheck.LoadBalancer, backend string, hc *types.HealthCheck) *healthcheck.Options {
+	if hc == nil || hc.URL == "" {
+		return nil
+	}
+
+	interval := healthcheck.DefaultInterval
+	if hc.Interval != "" {
+		intervalOverride, err := time.ParseDuration(hc.Interval)
+		switch {
+		case err != nil:
+			log.Errorf("Illegal healthcheck interval for backend '%s': %s", backend, err)
+		case intervalOverride <= 0:
+			log.Errorf("Healthcheck interval smaller than zero for backend '%s', backend", backend)
+		default:
+			interval = intervalOverride
+		}
+	}
+
+	return &healthcheck.Options{
+		URL:      hc.URL,
+		Interval: interval,
+		LB:       lb,
+	}
 }
 
 func getRoute(serverRoute *serverRoute, route *types.Route) error {

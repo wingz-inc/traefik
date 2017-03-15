@@ -20,6 +20,11 @@ import (
 	"github.com/gambol99/go-marathon"
 )
 
+const (
+	labelBackendHealthCheckPath     = "traefik.backend.healthcheck.path"
+	labelBackendHealthCheckInterval = "traefik.backend.healthcheck.interval"
+)
+
 var _ Provider = (*Marathon)(nil)
 
 // Marathon holds configuration of the Marathon provider.
@@ -148,6 +153,9 @@ func (provider *Marathon) loadMarathonConfig() *types.Configuration {
 		"getLoadBalancerMethod":       provider.getLoadBalancerMethod,
 		"getCircuitBreakerExpression": provider.getCircuitBreakerExpression,
 		"getSticky":                   provider.getSticky,
+		"hasHealthCheckLabels":        provider.hasHealthCheckLabels,
+		"getHealthCheckPath":          provider.getHealthCheckPath,
+		"getHealthCheckInterval":      provider.getHealthCheckInterval,
 	}
 
 	applications, err := provider.marathonClient.Applications(nil)
@@ -489,6 +497,24 @@ func (provider *Marathon) getCircuitBreakerExpression(application marathon.Appli
 		return label
 	}
 	return "NetworkErrorRatio() > 1"
+}
+
+func (provider *Marathon) hasHealthCheckLabels(application marathon.Application) bool {
+	return provider.getHealthCheckPath(application) != ""
+}
+
+func (provider *Marathon) getHealthCheckPath(application marathon.Application) string {
+	if label, err := provider.getLabel(application, labelBackendHealthCheckPath); err == nil {
+		return label
+	}
+	return ""
+}
+
+func (provider *Marathon) getHealthCheckInterval(application marathon.Application) string {
+	if label, err := provider.getLabel(application, labelBackendHealthCheckInterval); err == nil {
+		return label
+	}
+	return ""
 }
 
 func processPorts(application marathon.Application, task marathon.Task) []int {
