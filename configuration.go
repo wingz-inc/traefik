@@ -14,6 +14,9 @@ import (
 	"github.com/containous/traefik/types"
 )
 
+// DefaultHealthCheckInterval is the default health check interval.
+const DefaultHealthCheckInterval = 30 * time.Second
+
 // TraefikConfiguration holds GlobalConfiguration and other stuff
 type TraefikConfiguration struct {
 	GlobalConfiguration `mapstructure:",squash"`
@@ -38,6 +41,7 @@ type GlobalConfiguration struct {
 	MaxIdleConnsPerHost       int                     `description:"If non-zero, controls the maximum idle (keep-alive) to keep per-host.  If zero, DefaultMaxIdleConnsPerHost is used"`
 	InsecureSkipVerify        bool                    `description:"Disable SSL certificate verification"`
 	Retry                     *Retry                  `description:"Enable retry sending request if network error"`
+	HealthCheck               *HealthCheckConfig      `description:"Health check parameters"`
 	Docker                    *provider.Docker        `description:"Enable Docker backend"`
 	File                      *provider.File          `description:"Enable File backend"`
 	Web                       *WebProvider            `description:"Enable Web backend"`
@@ -310,6 +314,11 @@ type Retry struct {
 	Attempts int `description:"Number of attempts"`
 }
 
+// HealthCheckConfig contains health check configuration parameters.
+type HealthCheckConfig struct {
+	Interval time.Duration `description:"Default periodicity of enabled health checks"`
+}
+
 // NewTraefikDefaultPointersConfiguration creates a TraefikConfiguration with pointers default values
 func NewTraefikDefaultPointersConfiguration() *TraefikConfiguration {
 	//default Docker
@@ -430,6 +439,7 @@ func NewTraefikDefaultPointersConfiguration() *TraefikConfiguration {
 		Rancher:       &defaultRancher,
 		DynamoDB:      &defaultDynamoDB,
 		Retry:         &Retry{},
+		HealthCheck:   &HealthCheckConfig{},
 	}
 
 	//default Rancher
@@ -453,7 +463,10 @@ func NewTraefikConfiguration() *TraefikConfiguration {
 			DefaultEntryPoints:        []string{},
 			ProvidersThrottleDuration: time.Duration(2 * time.Second),
 			MaxIdleConnsPerHost:       200,
-			CheckNewVersion:           true,
+			HealthCheck: &HealthCheckConfig{
+				Interval: DefaultHealthCheckInterval,
+			},
+			CheckNewVersion: true,
 		},
 		ConfigFile: "",
 	}

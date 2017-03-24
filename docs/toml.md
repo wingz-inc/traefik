@@ -252,6 +252,25 @@ Supported filters:
 # attempts = 3
 ```
 
+## Health check configuration
+```toml
+# Enable custom health check options.
+#
+# Optional
+#
+[healthcheck]
+
+# Set the default health check interval. Will only be effective if health check
+# paths are defined. Given provider-specific support, the value may be
+# overridden on a per-backend basis.
+# Accepts any value that [time.ParseDuration](https://golang.org/pkg/time/#ParseDuration) supports.
+#
+# Optional
+# Default: "30s"
+#
+# interval = "30s"
+```
+
 ## ACME (Let's Encrypt) configuration
 
 ```toml
@@ -1633,7 +1652,7 @@ RefreshSeconds = 15
 
 ```
 
-Items in the dynamodb table must have three attributes: 
+Items in the dynamodb table must have three attributes:
 
 
 - 'id' : string
@@ -1641,4 +1660,4 @@ Items in the dynamodb table must have three attributes:
 - 'name' : string
     - The name is used as the name of the frontend or backend.
 - 'frontend' or 'backend' : map
-    - This attribute's structure matches exactly the structure of a Frontend or Backend type in traefik. See types/types.go for details. The presence or absence of this attribute determines its type. So an item should never have both a 'frontend' and a 'backend' attribute. 
+    - This attribute's structure matches exactly the structure of a Frontend or Backend type in traefik. See types/types.go for details. The presence or absence of this attribute determines its type. So an item should never have both a 'frontend' and a 'backend' attribute.
