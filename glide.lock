@@ -1,5 +1,5 @@
-hash: b689cb0faed68086641d9e3504ee29498e5bf06b088ad4fcd1e76543446d4d9a
-updated: 2017-03-27T14:29:54.009570184+02:00
+hash: 7df41212d9b6f9aa4f7c586491c9a7f0baca875b7ef9cbe4d05a94638a9978f7
+updated: 2017-04-04T21:41:38.333284093+02:00
 imports:
 - name: bitbucket.org/ww/goautoneg
   version: 75cd24fc2f2c2a2088577d12123ddee5f54e0675
@@ -136,8 +136,18 @@ imports:
 - name: github.com/docker/distribution
   version: 325b0804fef3a66309d962357aac3c2ce3f4d329
   subpackages:
+  - context
   - digest
   - reference
+  - registry/api/errcode
+  - registry/api/v2
+  - registry/client
+  - registry/client/auth
+  - registry/client/auth/challenge
+  - registry/client/transport
+  - registry/storage/cache
+  - registry/storage/cache/memory
+  - uuid
 - name: github.com/docker/docker
   version: 49bf474f9ed7ce7143a59d1964ff7b7fd9b52178
   subpackages:
@@ -374,6 +384,9 @@ imports:
 - name: github.com/opencontainers/runc
   version: 1a81e9ab1f138c091fe5c86d0883f87716088527
   subpackages:
+  - libcontainer/configs
+  - libcontainer/devices
+  - libcontainer/system
   - libcontainer/user
 - name: github.com/ovh/go-ovh
   version: a8a4c0bc40e56322142649bda7b2b4bb15145b6e
@@ -737,7 +750,7 @@ testImports:
   subpackages:
   - specs-go
 - name: github.com/vbatts/tar-split
-  version: 6810cedb21b2c3d0b9bb8f9af12ff2dc7a2f14df
+  version: bd4c5d64c3e9297f410025a3b1bd0c58f659e721
   subpackages:
   - archive/tar
   - tar/asm
