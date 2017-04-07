@@ -38,8 +38,6 @@ var launch = false
 type HealthCheck struct {
 	Backends map[string]*BackendHealthCheck
 	cancel   context.CancelFunc
-	// wg is for synchronization during testing only.
-	wg sync.WaitGroup
 }
 
 type loadBalancer interface {
@@ -51,7 +49,6 @@ type loadBalancer interface {
 func newHealthCheck() *HealthCheck {
 	return &HealthCheck{
 		Backends: make(map[string]*BackendHealthCheck),
-		wg:       sync.WaitGroup{},
 	}
 }
 
@@ -73,31 +70,30 @@ func (hc *HealthCheck) SetBackendsConfiguration(parentCtx context.Context, backe
 	}
 	ctx, cancel := context.WithCancel(parentCtx)
 	hc.cancel = cancel
-	hc.execute(ctx)
+
+	for backendID, backend := range hc.Backends {
+		currentBackendID := backendID
+		currentBackend := backend
+		safe.Go(func() {
+			hc.execute(ctx, currentBackendID, currentBackend)
+		})
+	}
 }
 
-func (hc *HealthCheck) execute(ctx context.Context) {
-	for backendID, backend := range hc.Backends {
-		currentBackend := backend
-		currentBackendID := backendID
-		safe.Go(func() {
-			hc.wg.Add(1)
-			defer hc.wg.Done()
-			log.Debugf("Initial healthcheck for currentBackend %s ", currentBackendID)
-			checkBackend(currentBackend)
-			ticker := time.NewTicker(currentBackend.Interval)
-			defer ticker.Stop()
-			for {
-				select {
-				case <-ctx.Done():
-					log.Debugf("Stopping all current Healthcheck goroutines")
-					return
-				case <-ticker.C:
-					log.Debugf("Refreshing healthcheck for currentBackend %s ", currentBackendID)
-					checkBackend(currentBackend)
-				}
-			}
-		})
+func (hc *HealthCheck) execute(ctx context.Context, backendID string, backend *BackendHealthCheck) {
+	log.Debugf("Initial healthcheck for currentBackend %s ", backendID)
+	checkBackend(backend)
+	ticker := time.NewTicker(backend.Interval)
+	defer ticker.Stop()
+	for {
+		select {
+		case <-ctx.Done():
+			log.Debugf("Stopping all current Healthcheck goroutines")
+			return
+		case <-ticker.C:
+			log.Debugf("Refreshing healthcheck for currentBackend %s ", backendID)
+			checkBackend(backend)
+		}
 	}
 }
 
