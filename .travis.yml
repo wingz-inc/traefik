@@ -27,3 +27,4 @@ script:
   - VERBOSE=yes TESTFLAGS="-count 1 -check.f MarathonSuite" make test-integration
 after_failure:
   - docker ps
+  - docker-compose -p integration-test-marathon
