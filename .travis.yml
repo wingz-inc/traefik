@@ -14,7 +14,6 @@ env:
 matrix:
   fast_finish: true
   include:
-  - env: DOCKER_VERSION=1.10.3
   - env: DOCKER_VERSION=1.12.6
 
 before_install:
@@ -22,46 +21,9 @@ before_install:
   - sudo -E apt-get -yq --no-install-suggests --no-install-recommends --force-yes install docker-engine=${DOCKER_VERSION}*
 install:
   - docker version
-  - pip install --user -r requirements.txt
 before_script:
-  - make validate
   - make binary
 script:
-  - travis_retry make test-unit
-  - travis_retry make test-integration
+  - VERBOSE=yes TESTFLAGS="-count 1 -check.f MarathonSuite" make test-integration
 after_failure:
   - docker ps
-after_success:
-  - make crossbinary
-  - make image
-before_deploy:
-  - mkdocs build --clean
-  - tar cfz dist/traefik-${VERSION}.src.tar.gz --exclude-vcs --exclude dist .
-deploy:
-  - provider: pages
-    edge: true
-    github_token: ${GITHUB_TOKEN}
-    local_dir: site
-    skip_cleanup: true
-    on:
-      repo: containous/traefik
-      tags: true
-  - provider: releases
-    api_key: ${GITHUB_TOKEN}
-    file: dist/traefik*
-    skip_cleanup: true
-    file_glob: true
-    on:
-      repo: containous/traefik
-      tags: true
-  - provider: script
-    script: sh script/deploy.sh
-    skip_cleanup: true
-    on:
-      repo: containous/traefik
-      tags: true
-  - provider: script
-    script: sh script/deploy-docker.sh
-    skip_cleanup: true
-    on:
-      repo: containous/traefik
